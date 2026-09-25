@@ -11,9 +11,26 @@ public interface AiService {
     /**
      * Sends a generic prompt to the underlying AI provider.
      * This method serves as a foundation for future specific use cases.
-     * 
+     *
+     * @param prompt The input text prompt to send to the AI model.
+     * @return The AI model's response.
+     */
+    /**
+     * Sends a generic prompt to the underlying AI provider.
+     * This method serves as a foundation for future specific use cases.
+     *
      * @param prompt The input text prompt to send to the AI model.
      * @return The AI model's response.
      */
     String generateResponse(String prompt);
+
+    /**
+     * Retrieves a file from the connected GitHub repository and requests the AI provider
+     * to explain it.
+     *
+     * @param projectId The ID of the project.
+     * @param path The path of the file in the repository.
+     * @return The AI-generated explanation.
+     */
+    String explainCode(Long projectId, String path);
 }

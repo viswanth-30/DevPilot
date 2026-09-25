@@ -16,6 +16,9 @@ public class AiProperties {
     private String key;
     private String model;
 
+    // Default 100KB max file size for analysis
+    private int maxFileSize = 100000;
+
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -38,5 +41,13 @@ public class AiProperties {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public int getMaxFileSize() {
+        return maxFileSize;
+    }
+
+    public void setMaxFileSize(int maxFileSize) {
+        this.maxFileSize = maxFileSize;
     }
 }

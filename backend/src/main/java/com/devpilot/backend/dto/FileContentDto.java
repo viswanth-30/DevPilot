@@ -10,6 +10,7 @@ public class FileContentDto {
     private Long size;
     private String encoding;
     private String content;
+    private String type;
 
     @JsonProperty("html_url")
     private String htmlUrl;
@@ -71,5 +72,13 @@ public class FileContentDto {
 
     public void setHtmlUrl(String htmlUrl) {
         this.htmlUrl = htmlUrl;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
