@@ -54,4 +54,17 @@ public class AiController {
         AiBugAnalysisResponseDto response = aiService.analyzeBugs(projectId, request.getPath());
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * POST /api/ai/improve/{projectId}
+     * Returns a structured code improvement suggestion report for a source file.
+     */
+    @PostMapping("/improve/{projectId}")
+    public ResponseEntity<com.devpilot.backend.dto.AiImprovementResponseDto> suggestImprovements(
+            @PathVariable Long projectId,
+            @Valid @RequestBody AiExplainRequestDto request) {
+
+        com.devpilot.backend.dto.AiImprovementResponseDto response = aiService.suggestImprovements(projectId, request.getPath());
+        return ResponseEntity.ok(response);
+    }
 }

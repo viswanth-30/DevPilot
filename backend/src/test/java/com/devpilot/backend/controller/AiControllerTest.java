@@ -193,4 +193,95 @@ public class AiControllerTest {
                     .andExpect(jsonPath("$.message").value("AI provider rate limit exceeded. Please try again later."));
         }
     }
+
+    // =========================================================================
+    // POST /api/ai/improve/{projectId}
+    // =========================================================================
+
+    @Nested
+    @DisplayName("POST /api/ai/improve/{projectId}")
+    class ImproveEndpoint {
+
+        private com.devpilot.backend.dto.AiImprovementResponseDto sampleResponse() {
+            com.devpilot.backend.dto.AiImprovementDto improvement = new com.devpilot.backend.dto.AiImprovementDto(
+                    com.devpilot.backend.dto.ImprovementCategory.MAINTAINABILITY,
+                    com.devpilot.backend.dto.ImprovementPriority.MEDIUM,
+                    "Extract logic",
+                    "Extract repeated logic.",
+                    "42-55",
+                    "Create a method."
+            );
+            return new com.devpilot.backend.dto.AiImprovementResponseDto(
+                    2L,
+                    "src/Service.java",
+                    "Found one improvement.",
+                    List.of(improvement)
+            );
+        }
+
+        @Test
+        void successReturns200WithStructuredResponse() throws Exception {
+            when(aiService.suggestImprovements(2L, "src/Service.java")).thenReturn(sampleResponse());
+
+            mockMvc.perform(post("/api/ai/improve/2")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"path\":\"src/Service.java\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.projectId").value(2))
+                    .andExpect(jsonPath("$.path").value("src/Service.java"))
+                    .andExpect(jsonPath("$.summary").value("Found one improvement."))
+                    .andExpect(jsonPath("$.suggestions").isArray())
+                    .andExpect(jsonPath("$.suggestions[0].category").value("MAINTAINABILITY"))
+                    .andExpect(jsonPath("$.suggestions[0].priority").value("MEDIUM"))
+                    .andExpect(jsonPath("$.suggestions[0].title").value("Extract logic"))
+                    .andExpect(jsonPath("$.suggestions[0].lineReference").value("42-55"));
+        }
+
+        @Test
+        void missingPathReturns400() throws Exception {
+            mockMvc.perform(post("/api/ai/improve/2")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"path\":\"\"}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error").value("Validation Failed"));
+        }
+
+        @Test
+        void projectNotFoundReturns404() throws Exception {
+            when(aiService.suggestImprovements(99L, "src/Main.java"))
+                    .thenThrow(new ResourceNotFoundException("Project not found with id: 99"));
+
+            mockMvc.perform(post("/api/ai/improve/99")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"path\":\"src/Main.java\"}"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error").value("Not Found"));
+        }
+
+        @Test
+        void aiExceptionReturns500() throws Exception {
+            when(aiService.suggestImprovements(2L, "src/Main.java"))
+                    .thenThrow(new AiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "AI provider returned a response that could not be parsed as structured code improvement suggestions."));
+
+            mockMvc.perform(post("/api/ai/improve/2")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"path\":\"src/Main.java\"}"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.message").value(
+                            "AI provider returned a response that could not be parsed as structured code improvement suggestions."));
+        }
+
+        @Test
+        void rateLimitReturns429() throws Exception {
+            when(aiService.suggestImprovements(2L, "src/Main.java"))
+                    .thenThrow(new AiException(HttpStatus.TOO_MANY_REQUESTS, "AI provider rate limit exceeded. Please try again later."));
+
+            mockMvc.perform(post("/api/ai/improve/2")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"path\":\"src/Main.java\"}"))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(jsonPath("$.message").value("AI provider rate limit exceeded. Please try again later."));
+        }
+    }
 }

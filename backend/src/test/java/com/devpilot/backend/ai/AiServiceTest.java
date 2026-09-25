@@ -371,4 +371,152 @@ public class AiServiceTest {
             aiService.analyzeBugs(1L, "X.java");
         }
     }
+
+    // =========================================================================
+    // suggestImprovements
+    // =========================================================================
+
+    @Nested
+    @DisplayName("suggestImprovements()")
+    class SuggestImprovements {
+
+        private FileContentDto fileWithContent(String content) {
+            FileContentDto dto = new FileContentDto();
+            dto.setContent(content);
+            dto.setType("file");
+            return dto;
+        }
+
+        private static final String VALID_IMPROVEMENT_JSON = """
+                {
+                  "summary": "Several improvements could make this service easier to maintain.",
+                  "suggestions": [
+                    {
+                      "category": "MAINTAINABILITY",
+                      "priority": "MEDIUM",
+                      "title": "Extract repeated mapping logic",
+                      "description": "The response mapping logic could be isolated...",
+                      "lineReference": "42-55",
+                      "recommendation": "Move the mapping into a dedicated method..."
+                    }
+                  ]
+                }
+                """;
+
+        private static final String EMPTY_IMPROVEMENT_JSON = """
+                {
+                  "summary": "No significant improvement opportunities were identified.",
+                  "suggestions": []
+                }
+                """;
+
+        @Test
+        void successfulAnalysisReturnsParsedResponse() {
+            Long projectId = 1L;
+            String path = "src/Main.java";
+
+            when(gitHubService.getFileContent(projectId, path)).thenReturn(fileWithContent("public class Main {}"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(VALID_IMPROVEMENT_JSON);
+
+            com.devpilot.backend.dto.AiImprovementResponseDto result = aiService.suggestImprovements(projectId, path);
+
+            assertEquals(1L, result.getProjectId());
+            assertEquals("src/Main.java", result.getPath());
+            assertEquals("Several improvements could make this service easier to maintain.", result.getSummary());
+            assertEquals(1, result.getSuggestions().size());
+            com.devpilot.backend.dto.AiImprovementDto suggestion = result.getSuggestions().get(0);
+            assertEquals(com.devpilot.backend.dto.ImprovementCategory.MAINTAINABILITY, suggestion.getCategory());
+            assertEquals(com.devpilot.backend.dto.ImprovementPriority.MEDIUM, suggestion.getPriority());
+            assertEquals("Extract repeated mapping logic", suggestion.getTitle());
+            assertEquals("42-55", suggestion.getLineReference());
+        }
+
+        @Test
+        void emptySuggestionListReturnedWhenNoImprovementsFound() {
+            Long projectId = 2L;
+            String path = "src/Clean.java";
+
+            when(gitHubService.getFileContent(projectId, path)).thenReturn(fileWithContent("class Clean {}"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(EMPTY_IMPROVEMENT_JSON);
+
+            com.devpilot.backend.dto.AiImprovementResponseDto result = aiService.suggestImprovements(projectId, path);
+
+            assertEquals("No significant improvement opportunities were identified.", result.getSummary());
+            assertTrue(result.getSuggestions().isEmpty());
+        }
+
+        @Test
+        void multipleSuggestionsAreParsedCorrectly() {
+            String multiJson = """
+                    {
+                      "summary": "Two improvements found.",
+                      "suggestions": [
+                        {"category": "READABILITY", "priority": "LOW", "title": "T1", "description": "D1", "lineReference": "1", "recommendation": "R1"},
+                        {"category": "SECURITY", "priority": "HIGH", "title": "T2", "description": "D2", "lineReference": "2", "recommendation": "R2"}
+                      ]
+                    }
+                    """;
+            when(gitHubService.getFileContent(1L, "f.java")).thenReturn(fileWithContent("code"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(multiJson);
+
+            com.devpilot.backend.dto.AiImprovementResponseDto result = aiService.suggestImprovements(1L, "f.java");
+
+            assertEquals(2, result.getSuggestions().size());
+            assertEquals(com.devpilot.backend.dto.ImprovementCategory.READABILITY, result.getSuggestions().get(0).getCategory());
+            assertEquals(com.devpilot.backend.dto.ImprovementPriority.LOW, result.getSuggestions().get(0).getPriority());
+            assertEquals(com.devpilot.backend.dto.ImprovementCategory.SECURITY, result.getSuggestions().get(1).getCategory());
+            assertEquals(com.devpilot.backend.dto.ImprovementPriority.HIGH, result.getSuggestions().get(1).getPriority());
+        }
+
+        @Test
+        void unknownCategoryAndPriorityNormalized() {
+            String unknownJson = """
+                    {
+                      "summary": "One improvement.",
+                      "suggestions": [
+                        {"category": "UNKNOWN_CAT", "priority": "UNKNOWN_PRI", "title": "T", "description": "D", "lineReference": "1", "recommendation": "S"}
+                      ]
+                    }
+                    """;
+            when(gitHubService.getFileContent(1L, "f.java")).thenReturn(fileWithContent("code"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(unknownJson);
+
+            com.devpilot.backend.dto.AiImprovementResponseDto result = aiService.suggestImprovements(1L, "f.java");
+
+            assertEquals(com.devpilot.backend.dto.ImprovementCategory.MAINTAINABILITY, result.getSuggestions().get(0).getCategory());
+            assertEquals(com.devpilot.backend.dto.ImprovementPriority.LOW, result.getSuggestions().get(0).getPriority());
+        }
+
+        @Test
+        void malformedJsonThrowsAiException() {
+            when(gitHubService.getFileContent(1L, "f.java")).thenReturn(fileWithContent("code"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn("not valid json at all {{{{");
+
+            AiException ex = assertThrows(AiException.class, () -> aiService.suggestImprovements(1L, "f.java"));
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatus());
+        }
+
+        @Test
+        void promptContainsImprovementInstructions() {
+            FileContentDto file = new FileContentDto();
+            file.setContent("public class X {}");
+            when(gitHubService.getFileContent(1L, "X.java")).thenReturn(file);
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+
+            when(aiProvider.generateResponse(anyString())).thenAnswer(invocation -> {
+                String prompt = invocation.getArgument(0);
+                assertTrue(prompt.contains("IMPROVEMENT:"), "Prompt must define improvement");
+                assertTrue(prompt.contains("---BEGIN SOURCE---"), "Prompt must include source delimiter");
+                assertTrue(prompt.contains("X.java"), "Prompt must include file path");
+                return "{\"summary\":\"ok\",\"suggestions\":[]}";
+            });
+
+            aiService.suggestImprovements(1L, "X.java");
+        }
+    }
 }

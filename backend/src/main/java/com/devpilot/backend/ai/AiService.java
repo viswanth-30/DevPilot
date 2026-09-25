@@ -43,4 +43,14 @@ public interface AiService {
      * @return A structured bug-analysis response DTO.
      */
     com.devpilot.backend.dto.AiBugAnalysisResponseDto analyzeBugs(Long projectId, String path);
+
+    /**
+     * Retrieves a file from the connected GitHub repository and requests the AI provider
+     * to identify meaningful opportunities to improve the code.
+     *
+     * @param projectId The ID of the project.
+     * @param path The path of the file in the repository.
+     * @return A structured code-improvement response DTO.
+     */
+    com.devpilot.backend.dto.AiImprovementResponseDto suggestImprovements(Long projectId, String path);
 }
