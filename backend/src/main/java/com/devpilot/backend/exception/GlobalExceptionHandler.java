@@ -2,6 +2,7 @@ package com.devpilot.backend.exception;
 
 import com.devpilot.backend.dto.ErrorResponseDto;
 import com.devpilot.backend.exception.GitHubApiException;
+import com.devpilot.backend.exception.AiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -114,5 +115,19 @@ public class GlobalExceptionHandler {
                 null
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    /**
+     * Handles AiException for AI service failures.
+     */
+    @ExceptionHandler(AiException.class)
+    public ResponseEntity<ErrorResponseDto> handleAiException(AiException ex) {
+        ErrorResponseDto body = new ErrorResponseDto(
+                ex.getStatus().value(),
+                ex.getStatus().getReasonPhrase(),
+                ex.getMessage(),
+                null
+        );
+        return ResponseEntity.status(ex.getStatus()).body(body);
     }
 }
