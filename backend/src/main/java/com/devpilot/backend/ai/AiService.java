@@ -33,4 +33,14 @@ public interface AiService {
      * @return The AI-generated explanation.
      */
     String explainCode(Long projectId, String path);
+
+    /**
+     * Retrieves a file from the connected GitHub repository and requests the AI provider
+     * to detect bugs and defects in it.
+     *
+     * @param projectId The ID of the project.
+     * @param path The path of the file in the repository.
+     * @return A structured bug-analysis response DTO.
+     */
+    com.devpilot.backend.dto.AiBugAnalysisResponseDto analyzeBugs(Long projectId, String path);
 }
