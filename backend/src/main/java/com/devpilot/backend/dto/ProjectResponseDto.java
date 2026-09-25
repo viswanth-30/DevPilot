@@ -16,6 +16,9 @@ public class ProjectResponseDto {
     private String name;
     private String description;
     private String githubUrl;
+    private String repoOwner;
+    private String repoName;
+    private String defaultBranch;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -25,12 +28,16 @@ public class ProjectResponseDto {
     }
 
     public ProjectResponseDto(Long id, String name, String description,
-                              String githubUrl, LocalDateTime createdAt,
+                              String githubUrl, String repoOwner, String repoName,
+                              String defaultBranch, LocalDateTime createdAt,
                               LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.githubUrl = githubUrl;
+        this.repoOwner = repoOwner;
+        this.repoName = repoName;
+        this.defaultBranch = defaultBranch;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -67,6 +74,30 @@ public class ProjectResponseDto {
 
     public void setGithubUrl(String githubUrl) {
         this.githubUrl = githubUrl;
+    }
+
+    public String getRepoOwner() {
+        return repoOwner;
+    }
+
+    public void setRepoOwner(String repoOwner) {
+        this.repoOwner = repoOwner;
+    }
+
+    public String getRepoName() {
+        return repoName;
+    }
+
+    public void setRepoName(String repoName) {
+        this.repoName = repoName;
+    }
+
+    public String getDefaultBranch() {
+        return defaultBranch;
+    }
+
+    public void setDefaultBranch(String defaultBranch) {
+        this.defaultBranch = defaultBranch;
     }
 
     public LocalDateTime getCreatedAt() {

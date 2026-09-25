@@ -125,6 +125,9 @@ public class ProjectService {
                 project.getName(),
                 project.getDescription(),
                 project.getGithubUrl(),
+                project.getRepoOwner(),
+                project.getRepoName(),
+                project.getDefaultBranch(),
                 project.getCreatedAt(),
                 project.getUpdatedAt()
         );

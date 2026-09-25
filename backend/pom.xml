@@ -56,6 +56,13 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!-- WebClient — HTTP client for GitHub REST API (used in a later milestone).  -->
+		<!-- WebClient is part of webflux. We call it synchronously — no reactive code. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
+		</dependency>
+
 		<!-- Dev Tools (hot reload) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

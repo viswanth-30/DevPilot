@@ -4,6 +4,8 @@ import com.devpilot.backend.model.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * Spring Data JPA repository for the Project entity.
  *
@@ -17,5 +19,13 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
-    // Custom query methods will be added here when needed (e.g., for GitHub integration).
+
+    /**
+     * Finds a project by its GitHub repository URL.
+     * Used before connecting a new repository to check for duplicates —
+     * the same GitHub URL must not be connected to two different projects.
+     *
+     * Spring Data JPA auto-implements this from the method name.
+     */
+    Optional<Project> findByGithubUrl(String githubUrl);
 }

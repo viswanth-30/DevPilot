@@ -29,8 +29,21 @@ public class Project {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "github_url")
+    // Raised from default VARCHAR(255) — GitHub URLs with deep paths can exceed 255 characters.
+    @Column(name = "github_url", length = 500)
     private String githubUrl;
+
+    // Set when a GitHub repository is successfully connected to this project.
+    // Parsed from githubUrl so that every API call does not re-parse the URL.
+    @Column(name = "repo_owner", length = 100)
+    private String repoOwner;
+
+    @Column(name = "repo_name", length = 100)
+    private String repoName;
+
+    // Fetched from GitHub API on connect — required for file tree calls.
+    @Column(name = "default_branch", length = 100)
+    private String defaultBranch;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -98,6 +111,30 @@ public class Project {
 
     public void setGithubUrl(String githubUrl) {
         this.githubUrl = githubUrl;
+    }
+
+    public String getRepoOwner() {
+        return repoOwner;
+    }
+
+    public void setRepoOwner(String repoOwner) {
+        this.repoOwner = repoOwner;
+    }
+
+    public String getRepoName() {
+        return repoName;
+    }
+
+    public void setRepoName(String repoName) {
+        this.repoName = repoName;
+    }
+
+    public String getDefaultBranch() {
+        return defaultBranch;
+    }
+
+    public void setDefaultBranch(String defaultBranch) {
+        this.defaultBranch = defaultBranch;
     }
 
     public LocalDateTime getCreatedAt() {
