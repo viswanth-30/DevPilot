@@ -67,4 +67,17 @@ public class AiController {
         com.devpilot.backend.dto.AiImprovementResponseDto response = aiService.suggestImprovements(projectId, request.getPath());
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * POST /api/ai/tests/{projectId}
+     * Returns a structured test suggestion report for a source file.
+     */
+    @PostMapping("/tests/{projectId}")
+    public ResponseEntity<com.devpilot.backend.dto.AiTestSuggestionResponseDto> suggestTests(
+            @PathVariable Long projectId,
+            @Valid @RequestBody AiExplainRequestDto request) {
+
+        com.devpilot.backend.dto.AiTestSuggestionResponseDto response = aiService.suggestTests(projectId, request.getPath());
+        return ResponseEntity.ok(response);
+    }
 }

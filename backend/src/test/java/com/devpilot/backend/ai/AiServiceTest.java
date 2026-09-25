@@ -519,4 +519,153 @@ public class AiServiceTest {
             aiService.suggestImprovements(1L, "X.java");
         }
     }
+
+    // =========================================================================
+    // suggestTests
+    // =========================================================================
+
+    @Nested
+    @DisplayName("suggestTests()")
+    class SuggestTests {
+
+        private FileContentDto fileWithContent(String content) {
+            FileContentDto dto = new FileContentDto();
+            dto.setContent(content);
+            dto.setType("file");
+            return dto;
+        }
+
+        private static final String VALID_TEST_JSON = """
+                {
+                  "summary": "The file should be covered with unit tests for CRUD operations.",
+                  "tests": [
+                    {
+                      "testType": "UNIT",
+                      "priority": "HIGH",
+                      "title": "Should create project successfully",
+                      "description": "Verify that a valid project request creates a project.",
+                      "targetMethod": "createProject",
+                      "scenario": "Valid project request",
+                      "expectedBehavior": "Project is saved."
+                    }
+                  ]
+                }
+                """;
+
+        private static final String EMPTY_TEST_JSON = """
+                {
+                  "summary": "No tests are required for this code.",
+                  "tests": []
+                }
+                """;
+
+        @Test
+        void successfulAnalysisReturnsParsedResponse() {
+            Long projectId = 1L;
+            String path = "src/Main.java";
+
+            when(gitHubService.getFileContent(projectId, path)).thenReturn(fileWithContent("public class Main {}"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(VALID_TEST_JSON);
+
+            com.devpilot.backend.dto.AiTestSuggestionResponseDto result = aiService.suggestTests(projectId, path);
+
+            assertEquals(1L, result.getProjectId());
+            assertEquals("src/Main.java", result.getPath());
+            assertEquals("The file should be covered with unit tests for CRUD operations.", result.getSummary());
+            assertEquals(1, result.getTests().size());
+            com.devpilot.backend.dto.AiTestSuggestionDto suggestion = result.getTests().get(0);
+            assertEquals(com.devpilot.backend.dto.TestType.UNIT, suggestion.getTestType());
+            assertEquals(com.devpilot.backend.dto.TestPriority.HIGH, suggestion.getPriority());
+            assertEquals("Should create project successfully", suggestion.getTitle());
+            assertEquals("createProject", suggestion.getTargetMethod());
+        }
+
+        @Test
+        void emptySuggestionListReturnedWhenNoTestsFound() {
+            Long projectId = 2L;
+            String path = "src/Clean.java";
+
+            when(gitHubService.getFileContent(projectId, path)).thenReturn(fileWithContent("interface Clean {}"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(EMPTY_TEST_JSON);
+
+            com.devpilot.backend.dto.AiTestSuggestionResponseDto result = aiService.suggestTests(projectId, path);
+
+            assertEquals("No tests are required for this code.", result.getSummary());
+            assertTrue(result.getTests().isEmpty());
+        }
+
+        @Test
+        void multipleSuggestionsAreParsedCorrectly() {
+            String multiJson = """
+                    {
+                      "summary": "Two tests found.",
+                      "tests": [
+                        {"testType": "EDGE_CASE", "priority": "LOW", "title": "T1", "description": "D1", "targetMethod": "M1", "scenario": "S1", "expectedBehavior": "E1"},
+                        {"testType": "ERROR_HANDLING", "priority": "HIGH", "title": "T2", "description": "D2", "targetMethod": "M2", "scenario": "S2", "expectedBehavior": "E2"}
+                      ]
+                    }
+                    """;
+            when(gitHubService.getFileContent(1L, "f.java")).thenReturn(fileWithContent("code"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(multiJson);
+
+            com.devpilot.backend.dto.AiTestSuggestionResponseDto result = aiService.suggestTests(1L, "f.java");
+
+            assertEquals(2, result.getTests().size());
+            assertEquals(com.devpilot.backend.dto.TestType.EDGE_CASE, result.getTests().get(0).getTestType());
+            assertEquals(com.devpilot.backend.dto.TestPriority.LOW, result.getTests().get(0).getPriority());
+            assertEquals(com.devpilot.backend.dto.TestType.ERROR_HANDLING, result.getTests().get(1).getTestType());
+            assertEquals(com.devpilot.backend.dto.TestPriority.HIGH, result.getTests().get(1).getPriority());
+        }
+
+        @Test
+        void unknownTestTypeAndPriorityNormalized() {
+            String unknownJson = """
+                    {
+                      "summary": "One test.",
+                      "tests": [
+                        {"testType": "UNKNOWN_TYPE", "priority": "UNKNOWN_PRI", "title": "T", "description": "D", "targetMethod": "M", "scenario": "S", "expectedBehavior": "E"}
+                      ]
+                    }
+                    """;
+            when(gitHubService.getFileContent(1L, "f.java")).thenReturn(fileWithContent("code"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn(unknownJson);
+
+            com.devpilot.backend.dto.AiTestSuggestionResponseDto result = aiService.suggestTests(1L, "f.java");
+
+            assertEquals(com.devpilot.backend.dto.TestType.UNIT, result.getTests().get(0).getTestType());
+            assertEquals(com.devpilot.backend.dto.TestPriority.LOW, result.getTests().get(0).getPriority());
+        }
+
+        @Test
+        void malformedJsonThrowsAiException() {
+            when(gitHubService.getFileContent(1L, "f.java")).thenReturn(fileWithContent("code"));
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+            when(aiProvider.generateResponse(anyString())).thenReturn("not valid json at all {{{{");
+
+            AiException ex = assertThrows(AiException.class, () -> aiService.suggestTests(1L, "f.java"));
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatus());
+        }
+
+        @Test
+        void promptContainsTestInstructions() {
+            FileContentDto file = new FileContentDto();
+            file.setContent("public class X {}");
+            when(gitHubService.getFileContent(1L, "X.java")).thenReturn(file);
+            when(aiProperties.getMaxFileSize()).thenReturn(100000);
+
+            when(aiProvider.generateResponse(anyString())).thenAnswer(invocation -> {
+                String prompt = invocation.getArgument(0);
+                assertTrue(prompt.contains("unit tests"), "Prompt must mention unit tests");
+                assertTrue(prompt.contains("---BEGIN SOURCE---"), "Prompt must include source delimiter");
+                assertTrue(prompt.contains("X.java"), "Prompt must include file path");
+                return "{\"summary\":\"ok\",\"tests\":[]}";
+            });
+
+            aiService.suggestTests(1L, "X.java");
+        }
+    }
 }

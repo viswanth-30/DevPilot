@@ -53,4 +53,14 @@ public interface AiService {
      * @return A structured code-improvement response DTO.
      */
     com.devpilot.backend.dto.AiImprovementResponseDto suggestImprovements(Long projectId, String path);
+
+    /**
+     * Retrieves a file from the connected GitHub repository and requests the AI provider
+     * to identify meaningful unit tests that should be written for the code.
+     *
+     * @param projectId The ID of the project.
+     * @param path The path of the file in the repository.
+     * @return A structured test-suggestion response DTO.
+     */
+    com.devpilot.backend.dto.AiTestSuggestionResponseDto suggestTests(Long projectId, String path);
 }
