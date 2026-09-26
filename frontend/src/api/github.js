@@ -2,8 +2,10 @@
  * API service for managing GitHub integration
  */
 
+import { API_BASE_URL } from './config';
+
 export const connectGitHub = async (projectId) => {
-    const response = await fetch(`/api/github/connect/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/github/connect/${projectId}`, {
         method: 'POST'
     });
 
@@ -26,7 +28,7 @@ export const connectGitHub = async (projectId) => {
 };
 
 export const fetchRepositoryTree = async (projectId) => {
-    const response = await fetch(`/api/github/tree/${projectId}`);
+    const response = await fetch(`${API_BASE_URL}/api/github/tree/${projectId}`);
 
     if (!response.ok) {
         let errorMessage = 'Failed to load repository tree';
@@ -47,7 +49,7 @@ export const fetchRepositoryTree = async (projectId) => {
 };
 
 export const fetchFileContent = async (projectId, path) => {
-    const response = await fetch(`/api/github/file/${projectId}?path=${encodeURIComponent(path)}`);
+    const response = await fetch(`${API_BASE_URL}/api/github/file/${projectId}?path=${encodeURIComponent(path)}`);
 
     if (!response.ok) {
         let errorMessage = 'Failed to load file content';

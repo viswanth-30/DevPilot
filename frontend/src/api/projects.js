@@ -2,8 +2,10 @@
  * API service for managing Projects
  */
 
+import { API_BASE_URL } from './config';
+
 export const fetchProjects = async () => {
-    const response = await fetch('/api/projects');
+    const response = await fetch(`${API_BASE_URL}/api/projects`);
     if (!response.ok) {
         throw new Error('Failed to fetch projects');
     }
@@ -11,7 +13,7 @@ export const fetchProjects = async () => {
 };
 
 export const fetchProjectById = async (id) => {
-    const response = await fetch(`/api/projects/${id}`);
+    const response = await fetch(`${API_BASE_URL}/api/projects/${id}`);
     if (!response.ok) {
         throw new Error(`Failed to fetch project with id: ${id}`);
     }
@@ -19,7 +21,7 @@ export const fetchProjectById = async (id) => {
 };
 
 export const createProject = async (projectData) => {
-    const response = await fetch('/api/projects', {
+    const response = await fetch(`${API_BASE_URL}/api/projects`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './config';
 /**
  * API service for managing AI operations
  */
@@ -21,7 +22,7 @@ const handleResponse = async (response) => {
 };
 
 export const explainCode = async (projectId, path) => {
-    const response = await fetch(`/api/ai/explain/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/ai/explain/${projectId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -32,7 +33,7 @@ export const explainCode = async (projectId, path) => {
 };
 
 export const analyzeBugs = async (projectId, path) => {
-    const response = await fetch(`/api/ai/analyze/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/ai/analyze/${projectId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -43,7 +44,7 @@ export const analyzeBugs = async (projectId, path) => {
 };
 
 export const suggestImprovements = async (projectId, path) => {
-    const response = await fetch(`/api/ai/improve/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/ai/improve/${projectId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -54,7 +55,7 @@ export const suggestImprovements = async (projectId, path) => {
 };
 
 export const suggestTests = async (projectId, path) => {
-    const response = await fetch(`/api/ai/tests/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/ai/tests/${projectId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
