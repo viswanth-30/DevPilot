@@ -4,6 +4,7 @@ import { fetchProjectById } from '../api/projects';
 import { connectGitHub, fetchRepositoryTree, fetchFileContent } from '../api/github';
 import FileTree from '../components/FileTree';
 import FileViewer from '../components/FileViewer';
+import AiAssistant from '../components/AiAssistant';
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -156,32 +157,36 @@ const ProjectDetails = () => {
             )}
 
             {hasRepoDetails && (
-                <div className="card">
-                    <h2>Repository Explorer</h2>
+                <>
+                    <div className="card">
+                        <h2>Repository Explorer</h2>
 
-                    {treeError && <div className="error-message">{treeError}</div>}
+                        {treeError && <div className="error-message">{treeError}</div>}
 
-                    <div style={{ marginTop: '1.5rem' }}>
-                        {isTreeLoading ? (
-                            <div className="loading">Loading repository tree...</div>
-                        ) : (
-                            <div className="repo-explorer">
-                                <div className="file-tree-container">
-                                    <FileTree
-                                        items={treeItems}
-                                        onSelectFile={handleSelectFile}
-                                        selectedPath={selectedFile?.path}
+                        <div style={{ marginTop: '1.5rem' }}>
+                            {isTreeLoading ? (
+                                <div className="loading">Loading repository tree...</div>
+                            ) : (
+                                <div className="repo-explorer">
+                                    <div className="file-tree-container">
+                                        <FileTree
+                                            items={treeItems}
+                                            onSelectFile={handleSelectFile}
+                                            selectedPath={selectedFile?.path}
+                                        />
+                                    </div>
+                                    <FileViewer
+                                        file={selectedFile}
+                                        isLoading={isFileLoading}
+                                        error={fileError}
                                     />
                                 </div>
-                                <FileViewer
-                                    file={selectedFile}
-                                    isLoading={isFileLoading}
-                                    error={fileError}
-                                />
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+
+                    <AiAssistant projectId={project.id} selectedFile={selectedFile} />
+                </>
             )}
         </div>
     );
